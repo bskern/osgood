@@ -8,3 +8,5 @@ of meaningless or offensive test emails to customers.
 The name "Osgood" is taken from America's first Postmaster
 General.  I think it is safe to assume that he did a better job of actually
 delivering mail than the osgood server does.
+
+This fork changes build to SBT and uses Typesafe Config library. No other code was modified

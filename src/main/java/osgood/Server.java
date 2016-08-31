@@ -1,5 +1,9 @@
 package osgood;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -30,7 +34,8 @@ public class Server implements Runnable {
 	}
 	
 	public void run() {
-		File mailbagDir = new File(config.getProperty("mailbag.location"));
+		Config conf = ConfigFactory.load();
+		File mailbagDir = new File(conf.getString("mailbag.location"));
 		ExecutorService threadPool = Executors.newCachedThreadPool(); 
 		while (!serverSocket.isClosed()) {
 			try {
@@ -60,21 +65,18 @@ public class Server implements Runnable {
 	
 	public static void main(String[] args) {
 		try {
+			Config conf = ConfigFactory.load();
 			Properties config = new Properties();
-			String configFileLocation = System.getProperty("config", "config/osgood.properties");
-			File configFile = new File(configFileLocation);
-			if (!configFile.exists() || !configFile.isFile() || !configFile.canRead()) {
-				System.err.println("Unable to read config file at " + configFile.getAbsolutePath() + ". Using defaults.");
+			try {
+				config.setProperty("smtp.port", conf.getString("smtp.port"));
+				config.setProperty("control.port", conf.getString("control.port"));
+				config.setProperty("mailbag.location", conf.getString("mailbag.location"));
+			}catch (ConfigException.Missing e) {
+				System.err.println("Unable to read config file  Using defaults.");
 				config.setProperty("smtp.port", "1025");
 				config.setProperty("control.port", "1026");
 				config.setProperty("mailbag.location", "mailbag");
-				System.err.println(config);
-			} else {
-				FileReader reader = new FileReader(configFile);
-				config.load(reader);
-				reader.close();
 			}
-			
 			Server server = new Server(config);
 			ExecutorService executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());
 			executor.execute(server);
